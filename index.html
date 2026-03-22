@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>KIIT Campus Explorer — Graph Traversal</title>
+	<link
+		href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap"
+		rel="stylesheet">
+	<style>
+		:root {
+			--bg: #080c14;
+			--surface: #0f1623;
+			--surface2: #141b2e;
+			--border: #1a2540;
+			--text: #c8d5e8;
+			--muted: #4a607a;
+			--accent: #0ea5e9;
+			--node-def: #141e30;
+			--node-def-b: #253450;
+			--node-q: #2d1b5e;
+			--node-q-b: #7c3aed;
+			--node-q-t: #c4b5fd;
+			--node-cur: #0c3f5e;
+			--node-cur-b: #0ea5e9;
+			--node-cur-t: #7dd3fc;
+			--node-vis: #0a3d28;
+			--node-vis-b: #22c55e;
+			--node-vis-t: #86efac;
+			--node-goal: #3d1a0a;
+			--node-goal-b: #f97316;
+			--node-goal-t: #fed7aa;
+			--edge-def: #1a2540;
+			--edge-q: #5b21b6;
+			--edge-cur: #0284c7;
+			--edge-vis: #166534;
+			--edge-goal: #c2410c;
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			height: 100%;
+			overflow: hidden;
+		}
+
+		body {
+			background: var(--bg);
+			color: var(--text);
+			font-family: 'Outfit', system-ui, sans-serif;
+			display: grid;
+			grid-template-rows: 52px 1fr 36px;
+			height: 100vh;
+		}
+
+		header {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 0 20px;
+			border-bottom: 1px solid var(--border);
+			flex-shrink: 0;
+		}
+
+		.logo {
+			width: 34px;
+			height: 34px;
+			background: linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 700;
+			font-size: 15px;
+			color: #fff;
+			flex-shrink: 0;
+		}
+
+		.title h1 {
+			font-size: 15px;
+			font-weight: 600;
+			color: #e2eaf5;
+			line-height: 1.2;
+		}
+
+		.title p {
+			font-size: 11px;
+			color: var(--muted);
+			margin-top: 1px;
+		}
+
+		.badge {
+			margin-left: auto;
+			padding: 3px 12px;
+			border-radius: 20px;
+			font-size: 11px;
+			font-weight: 600;
+			letter-spacing: .05em;
+			font-family: 'JetBrains Mono', monospace;
+			border: 1px solid var(--border);
+			color: var(--muted);
+			transition: all .3s;
+		}
+
+		.badge.run {
+			border-color: #0ea5e9;
+			color: #0ea5e9;
+			background: rgba(14, 165, 233, .08);
+		}
+
+		.badge.done {
+			border-color: #22c55e;
+			color: #22c55e;
+			background: rgba(34, 197, 94, .08);
+		}
+
+		.main {
+			display: grid;
+			grid-template-columns: 220px 1fr 252px;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		.panel {
+			border-right: 1px solid var(--border);
+			padding: 12px;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.panel:last-child {
+			border-right: none;
+			border-left: 1px solid var(--border);
+		}
+
+		.ptitle {
+			font-size: 9.5px;
+			font-weight: 700;
+			letter-spacing: .14em;
+			text-transform: uppercase;
+			color: var(--muted);
+		}
+
+		.field {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.flabel {
+			font-size: 11px;
+			color: var(--muted);
+		}
+
+		select {
+			background: var(--surface2);
+			border: 1px solid var(--border);
+			color: var(--text);
+			padding: 6px 26px 6px 9px;
+			border-radius: 7px;
+			font-size: 12px;
+			font-family: inherit;
+			cursor: pointer;
+			appearance: none;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a607a'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 9px center;
+		}
+
+		select:focus {
+			outline: 1px solid var(--accent);
+		}
+
+		input[type=range] {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 100%;
+			height: 3px;
+			background: var(--border);
+			border-radius: 3px;
+			outline: none;
+			cursor: pointer;
+		}
+
+		input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			width: 14px;
+			height: 14px;
+			border-radius: 50%;
+			background: var(--accent);
+			cursor: pointer;
+		}
+
+		.btns {
+			display: flex;
+			gap: 6px;
+		}
+
+		button {
+			flex: 1;
+			padding: 7px 6px;
+			border: 1px solid var(--border);
+			border-radius: 7px;
+			background: var(--surface2);
+			color: var(--text);
+			font-size: 11px;
+			font-family: inherit;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all .15s;
+			white-space: nowrap;
+		}
+
+		button:hover {
+			border-color: #2d4060;
+			background: #1a2540;
+		}
+
+		button.primary {
+			border-color: #0369a1;
+			background: var(--node-cur);
+			color: var(--node-cur-t);
+		}
+
+		button.primary:hover {
+			background: #0d4f74;
+		}
+
+		button:disabled {
+			opacity: .35;
+			cursor: not-allowed;
+		}
+
+		hr {
+			border: none;
+			border-top: 1px solid var(--border);
+		}
+
+		.legend {
+			display: flex;
+			flex-direction: column;
+			gap: 5px;
+		}
+
+		.litem {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 11px;
+		}
+
+		.ldot {
+			width: 12px;
+			height: 12px;
+			border-radius: 50%;
+			flex-shrink: 0;
+			border: 1.5px solid;
+		}
+
+		.map-area {
+			position: relative;
+			overflow: hidden;
+			background: var(--surface);
+			background-image: linear-gradient(var(--border) 1px, transparent 1px),
+				linear-gradient(90deg, var(--border) 1px, transparent 1px);
+			background-size: 40px 40px;
+			background-position: -1px -1px;
+		}
+
+		#map-svg {
+			width: 100%;
+			height: 100%;
+		}
+
+		.edge {
+			stroke: var(--edge-def);
+			stroke-width: 1.8;
+			transition: stroke .22s, stroke-width .22s, opacity .22s;
+			opacity: .7;
+		}
+
+		.edge.eq {
+			stroke: var(--edge-q);
+			stroke-width: 2.5;
+			opacity: 1;
+		}
+
+		.edge.ecur {
+			stroke: var(--edge-cur);
+			stroke-width: 3;
+			opacity: 1;
+		}
+
+		.edge.evis {
+			stroke: var(--edge-vis);
+			stroke-width: 2.2;
+			opacity: .9;
+		}
+
+		.edge.egoal {
+			stroke: var(--edge-goal);
+			stroke-width: 3;
+			opacity: 1;
+		}
+
+		.nc {
+			fill: var(--node-def);
+			stroke: var(--node-def-b);
+			stroke-width: 1.5;
+			transition: fill .22s, stroke .22s;
+		}
+
+		.nc.nq {
+			fill: var(--node-q);
+			stroke: var(--node-q-b);
+			stroke-width: 2;
+		}
+
+		.nc.ncur {
+			fill: var(--node-cur);
+			stroke: var(--node-cur-b);
+			stroke-width: 2.5;
+		}
+
+		.nc.nvis {
+			fill: var(--node-vis);
+			stroke: var(--node-vis-b);
+			stroke-width: 2;
+		}
+
+		.nc.ngoal {
+			fill: var(--node-goal);
+			stroke: var(--node-goal-b);
+			stroke-width: 2.5;
+		}
+
+		.nl {
+			font-family: 'JetBrains Mono', monospace;
+			font-size: 9px;
+			font-weight: 700;
+			text-anchor: middle;
+			dominant-baseline: central;
+			fill: #4a607a;
+			transition: fill .22s;
+			pointer-events: none;
+		}
+
+		.nl.nq {
+			fill: var(--node-q-t);
+		}
+
+		.nl.ncur {
+			fill: var(--node-cur-t);
+		}
+
+		.nl.nvis {
+			fill: var(--node-vis-t);
+		}
+
+		.nl.ngoal {
+			fill: var(--node-goal-t);
+		}
+
+		.nname {
+			font-family: 'Outfit', sans-serif;
+			font-size: 8.5px;
+			text-anchor: middle;
+			fill: #2d4060;
+			pointer-events: none;
+		}
+
+		.ewt {
+			font-family: 'JetBrains Mono', monospace;
+			font-size: 8px;
+			fill: #253450;
+			text-anchor: middle;
+			dominant-baseline: central;
+			pointer-events: none;
+		}
+
+		.mapttl {
+			font-family: 'Outfit', sans-serif;
+			font-size: 9.5px;
+			font-weight: 600;
+			fill: #1a2d48;
+			letter-spacing: .08em;
+		}
+
+		.ds-box {
+			background: var(--surface2);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 9px;
+			min-height: 48px;
+		}
+
+		.dstitle {
+			font-size: 9px;
+			text-transform: uppercase;
+			letter-spacing: .12em;
+			color: var(--muted);
+			margin-bottom: 6px;
+			font-weight: 700;
+		}
+
+		.ds-items {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 3px;
+			min-height: 20px;
+		}
+
+		.dsi {
+			padding: 2px 7px;
+			border-radius: 4px;
+			font-size: 9.5px;
+			font-family: 'JetBrains Mono', monospace;
+			font-weight: 700;
+			border: 1px solid;
+		}
+
+		.dsi.q {
+			background: var(--node-q);
+			border-color: var(--node-q-b);
+			color: var(--node-q-t);
+		}
+
+		.dsi.head {
+			background: var(--node-cur);
+			border-color: var(--node-cur-b);
+			color: var(--node-cur-t);
+		}
+
+		.empty-ds {
+			color: #253450;
+			font-size: 9.5px;
+			font-family: 'JetBrains Mono', monospace;
+		}
+
+		.trav-order {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+		}
+
+		.tnode {
+			width: 27px;
+			height: 27px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 8.5px;
+			font-family: 'JetBrains Mono', monospace;
+			font-weight: 700;
+			background: var(--node-vis);
+			border: 1px solid var(--node-vis-b);
+			color: var(--node-vis-t);
+		}
+
+		.dist-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 9px;
+			font-family: 'JetBrains Mono', monospace;
+		}
+
+		.dist-table th {
+			color: var(--muted);
+			font-weight: 400;
+			padding: 2px 3px;
+			text-align: left;
+			border-bottom: 1px solid var(--border);
+			font-size: 8.5px;
+		}
+
+		.dist-table td {
+			padding: 2px 3px;
+			color: #2d4060;
+		}
+
+		.dist-table .dvis td {
+			color: var(--node-vis-t);
+		}
+
+		.dist-table .dcur td {
+			color: var(--node-cur-t);
+		}
+
+		.step-box {
+			background: var(--surface2);
+			border: 1px solid var(--border);
+			border-left: 2px solid var(--accent);
+			border-radius: 0 7px 7px 0;
+			padding: 9px 10px;
+			font-size: 11px;
+			line-height: 1.55;
+			color: var(--text);
+			min-height: 44px;
+		}
+
+		footer {
+			display: flex;
+			align-items: center;
+			gap: 20px;
+			padding: 0 20px;
+			font-size: 11px;
+			color: var(--muted);
+			border-top: 1px solid var(--border);
+			flex-shrink: 0;
+		}
+
+		footer span:first-child {
+			font-weight: 600;
+			color: #2d4060;
+		}
+
+		.sc {
+			font-family: 'JetBrains Mono', monospace;
+			margin-left: auto;
+		}
+
+		.hidden {
+			display: none !important;
+		}
+	</style>
+</head>
+
+<body>
+
+	<header>
+		<div class="logo">K</div>
+		<div class="title">
+			<h1>KIIT Campus Explorer</h1>
+			<p>Bhubaneswar &middot; 17 Campuses &middot; 6 Algorithms</p>
+		</div>
+		<span class="badge" id="badge">IDLE</span>
+	</header>
+
+	<div class="main">
+
+		<!-- LEFT PANEL -->
+		<div class="panel">
+			<div class="ptitle">Algorithm</div>
+			<div class="field">
+				<select id="algo">
+					<optgroup label="Uninformed Search">
+						<option value="bfs">BFS — Breadth First</option>
+						<option value="dfs">DFS — Depth First</option>
+						<option value="ucs">UCS — Uniform Cost</option>
+					</optgroup>
+					<optgroup label="Informed / Heuristic">
+						<option value="gbfs">Greedy Best-First</option>
+						<option value="astar">A* — Optimal Heuristic</option>
+					</optgroup>
+					<optgroup label="All-Pairs Shortest Path">
+						<option value="dijkstra">Dijkstra</option>
+					</optgroup>
+				</select>
+			</div>
+
+			<div class="field">
+				<span class="flabel">Start Campus</span>
+				<select id="startNode"></select>
+			</div>
+
+			<div class="field hidden" id="goalWrap">
+				<span class="flabel">Goal Campus <span style="color:#f97316;font-size:10px;">(A* / Greedy)</span></span>
+				<select id="goalNode"></select>
+			</div>
+
+			<div class="field">
+				<span class="flabel">Speed — <span id="spdlbl">700ms</span></span>
+				<input type="range" id="spd" min="80" max="2000" value="1300" step="80">
+			</div>
+
+			<div class="btns">
+				<button class="primary" id="btnPlay">&#9654; Play</button>
+				<button id="btnStep">Step &rarr;</button>
+			</div>
+			<div class="btns">
+				<button id="btnReset">&#8635; Reset</button>
+			</div>
+
+			<hr>
+			<div class="ptitle">Legend</div>
+			<div class="legend">
+				<div class="litem">
+					<div class="ldot" style="background:var(--node-def);border-color:var(--node-def-b);"></div>
+					<span>Unvisited</span>
+				</div>
+				<div class="litem">
+					<div class="ldot" style="background:var(--node-q);border-color:var(--node-q-b);"></div><span>In
+						frontier</span>
+				</div>
+				<div class="litem">
+					<div class="ldot" style="background:var(--node-cur);border-color:var(--node-cur-b);"></div>
+					<span>Processing</span>
+				</div>
+				<div class="litem">
+					<div class="ldot" style="background:var(--node-vis);border-color:var(--node-vis-b);"></div>
+					<span>Visited</span>
+				</div>
+				<div class="litem">
+					<div class="ldot" style="background:var(--node-goal);border-color:var(--node-goal-b);"></div>
+					<span>Goal node</span>
+				</div>
+			</div>
+
+			<hr>
+			<div style="font-size:10.5px;color:var(--muted);line-height:1.6;">
+				Click any campus on the map to set it as start. Weights = approx. walking time (min).
+			</div>
+		</div>
+
+		<!-- MAP -->
+		<div class="map-area">
+			<svg id="map-svg" viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg"
+				preserveAspectRatio="xMidYMid meet">
+				<rect x="105" y="46" width="428" height="184" rx="14" fill="none" stroke="#111d30" stroke-width="1"
+					stroke-dasharray="5,5" />
+				<text x="120" y="64" class="mapttl">North Zone</text>
+				<rect x="374" y="278" width="422" height="222" rx="14" fill="none" stroke="#111d30" stroke-width="1"
+					stroke-dasharray="5,5" />
+				<text x="390" y="296" class="mapttl">South Zone</text>
+				<rect x="54" y="256" width="266" height="242" rx="14" fill="none" stroke="#111d30" stroke-width="1"
+					stroke-dasharray="5,5" />
+				<text x="68" y="274" class="mapttl">West Zone</text>
+				<g id="eLayer"></g>
+				<g id="wLayer"></g>
+				<g id="nLayer"></g>
+				<text x="22" y="546" class="mapttl" style="fill:#131d2e;font-size:9px;">KIIT UNIVERSITY &middot; PATIA,
+					BHUBANESWAR &middot; ODISHA</text>
+				<g transform="translate(928,44)">
+					<circle r="14" fill="#0d1525" stroke="#1a2540" stroke-width="1" />
+					<text text-anchor="middle" dominant-baseline="central" y="-6" font-size="7" fill="#2d4060"
+						font-family="'JetBrains Mono',monospace" font-weight="700">N</text>
+					<line x1="0" y1="-10" x2="0" y2="10" stroke="#1a2540" stroke-width=".8" />
+					<line x1="-10" y1="0" x2="10" y2="0" stroke="#1a2540" stroke-width=".8" />
+					<polygon points="0,-10 -3,-4 3,-4" fill="#253d5a" />
+				</g>
+			</svg>
+		</div>
+
+		<!-- RIGHT PANEL -->
+		<div class="panel" style="font-size:12px;">
+			<div class="ptitle">Algorithm State</div>
+
+			<div class="ds-box">
+				<div class="dstitle" id="dsTitle">FRONTIER</div>
+				<div class="ds-items" id="dsItems"><span class="empty-ds">&#8212; empty &#8212;</span></div>
+			</div>
+
+			<div>
+				<div class="ptitle" style="margin-bottom:5px;">Traversal Order</div>
+				<div class="trav-order" id="travOrder"></div>
+			</div>
+
+			<div id="dijkWrap" class="hidden">
+				<div class="ptitle" style="margin-bottom:4px;">Score Table</div>
+				<div style="max-height:170px;overflow-y:auto;">
+					<table class="dist-table">
+						<thead>
+							<tr>
+								<th>Campus</th>
+								<th id="colHdr">Score</th>
+								<th>Via</th>
+							</tr>
+						</thead>
+						<tbody id="distBody"></tbody>
+					</table>
+				</div>
+			</div>
+
+			<div>
+				<div class="ptitle" style="margin-bottom:5px;">Current Step</div>
+				<div class="step-box" id="stepBox">Select an algorithm and press Play or Step to begin.</div>
+			</div>
+
+			<div id="pathWrap" class="hidden">
+				<div class="ptitle" style="margin-bottom:4px;">Path Found</div>
+				<div id="pathDisplay"
+					style="font-size:9.5px;font-family:'JetBrains Mono',monospace;line-height:1.8;word-break:break-word;">
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+	<footer>
+		<span>KIIT University &middot; 17 Campuses</span>
+		<span id="algoLabel">BFS</span>
+		<span class="sc">Step: <span id="stepNum">0</span></span>
+	</footer>
+
+	<script>
+		// ── DATA ──────────────────────────────────────────────
+		const C = [
+			{ id: 0, code: "C-1", name: "Engineering & IT", x: 460, y: 208 },
+			{ id: 1, code: "C-2", name: "Mech & Civil", x: 626, y: 252 },
+			{ id: 2, code: "C-3", name: "Biotechnology", x: 590, y: 116 },
+			{ id: 3, code: "C-4", name: "Law", x: 308, y: 146 },
+			{ id: 4, code: "C-5", name: "KSOM Mgmt", x: 406, y: 80 },
+			{ id: 5, code: "C-6", name: "KISS", x: 236, y: 290 },
+			{ id: 6, code: "C-7", name: "Architecture", x: 460, y: 354 },
+			{ id: 7, code: "C-8", name: "Fashion Design", x: 318, y: 396 },
+			{ id: 8, code: "C-9", name: "Dental", x: 528, y: 438 },
+			{ id: 9, code: "C-10", name: "Film & Media", x: 680, y: 366 },
+			{ id: 10, code: "C-11", name: "Medical", x: 736, y: 192 },
+			{ id: 11, code: "C-12", name: "Hospitality", x: 186, y: 156 },
+			{ id: 12, code: "C-13", name: "Sports Complex", x: 150, y: 388 },
+			{ id: 13, code: "C-14", name: "Research & Innov.", x: 704, y: 82 },
+			{ id: 14, code: "C-15", name: "School of Education", x: 104, y: 278 },
+			{ id: 15, code: "C-16", name: "Mass Communication", x: 576, y: 492 },
+			{ id: 16, code: "C-17", name: "Intl. Studies", x: 366, y: 476 },
+		];
+
+		const EDGES = [
+			[0, 1, 5], [0, 2, 4], [0, 3, 5], [0, 4, 4], [0, 5, 6], [0, 6, 4],
+			[1, 2, 3], [1, 9, 5], [1, 10, 4],
+			[2, 4, 4], [2, 10, 6], [2, 13, 4],
+			[3, 4, 3], [3, 5, 4], [3, 11, 3],
+			[4, 5, 5],
+			[5, 7, 5], [5, 11, 4], [5, 14, 3], [5, 12, 5],
+			[6, 7, 4], [6, 8, 3], [6, 9, 5], [6, 16, 4],
+			[7, 8, 4], [7, 12, 5], [7, 16, 4],
+			[8, 9, 4], [8, 15, 3], [8, 16, 3],
+			[9, 10, 6], [9, 15, 4],
+			[10, 13, 5],
+			[11, 14, 4], [11, 12, 6],
+			[12, 14, 4],
+			[13, 2, 4],
+			[15, 16, 4],
+		];
+
+		const ADJ = Array.from({ length: C.length }, () => []);
+		for (const [u, v, w] of EDGES) { ADJ[u].push([v, w]); ADJ[v].push([u, w]); }
+
+		function h(a, b) {
+			const dx = C[a].x - C[b].x, dy = C[a].y - C[b].y;
+			return Math.sqrt(dx * dx + dy * dy) / 68;
+		}
+
+		// ── SVG ───────────────────────────────────────────────
+		const NS = "http://www.w3.org/2000/svg";
+		const eL = document.getElementById('eLayer');
+		const wL = document.getElementById('wLayer');
+		const nL = document.getElementById('nLayer');
+		const edgeMap = {};
+
+		function initMap() {
+			eL.innerHTML = ''; wL.innerHTML = ''; nL.innerHTML = '';
+			for (const [u, v, w] of EDGES) {
+				const cu = C[u], cv = C[v];
+				const ln = document.createElementNS(NS, 'line');
+				ln.setAttribute('x1', cu.x); ln.setAttribute('y1', cu.y);
+				ln.setAttribute('x2', cv.x); ln.setAttribute('y2', cv.y);
+				ln.setAttribute('class', 'edge');
+				eL.appendChild(ln);
+				edgeMap[u + '_' + v] = ln; edgeMap[v + '_' + u] = ln;
+				const mx = (cu.x + cv.x) / 2, my = (cu.y + cv.y) / 2;
+				const bg = document.createElementNS(NS, 'rect');
+				bg.setAttribute('x', mx - 7); bg.setAttribute('y', my - 7);
+				bg.setAttribute('width', 14); bg.setAttribute('height', 14);
+				bg.setAttribute('rx', 3); bg.setAttribute('fill', '#0f1623');
+				wL.appendChild(bg);
+				const wt = document.createElementNS(NS, 'text');
+				wt.setAttribute('x', mx); wt.setAttribute('y', my);
+				wt.setAttribute('class', 'ewt'); wt.textContent = w;
+				wL.appendChild(wt);
+			}
+			for (const c of C) {
+				const g = document.createElementNS(NS, 'g');
+				g.style.cursor = 'pointer';
+				g.addEventListener('click', () => nodeClick(c.id));
+				const circ = document.createElementNS(NS, 'circle');
+				circ.setAttribute('cx', c.x); circ.setAttribute('cy', c.y);
+				circ.setAttribute('r', 22); circ.setAttribute('class', 'nc');
+				circ.setAttribute('id', 'nc' + c.id);
+				const lbl = document.createElementNS(NS, 'text');
+				lbl.setAttribute('x', c.x); lbl.setAttribute('y', c.y);
+				lbl.setAttribute('class', 'nl'); lbl.setAttribute('id', 'nl' + c.id);
+				lbl.textContent = c.code;
+				const nm = document.createElementNS(NS, 'text');
+				nm.setAttribute('x', c.x); nm.setAttribute('y', c.y + 33);
+				nm.setAttribute('class', 'nname'); nm.textContent = c.name;
+				g.appendChild(circ); g.appendChild(lbl); g.appendChild(nm);
+				nL.appendChild(g);
+			}
+		}
+
+		function setNode(id, cls) {
+			document.getElementById('nc' + id)?.setAttribute('class', 'nc' + (cls ? ' ' + cls : ''));
+			document.getElementById('nl' + id)?.setAttribute('class', 'nl' + (cls ? ' ' + cls : ''));
+		}
+		function setEdge(u, v, cls) {
+			const el = edgeMap[u + '_' + v] || edgeMap[v + '_' + u];
+			if (el) el.setAttribute('class', 'edge' + (cls ? ' ' + cls : ''));
+		}
+		function resetViz() {
+			for (const c of C) setNode(c.id, '');
+			for (const [u, v] of EDGES) setEdge(u, v, '');
+		}
+
+		// ── ALGORITHMS ────────────────────────────────────────
+		function* algoBFS(start) {
+			const vis = new Set(), inQ = new Set(), q = [start], ord = [];
+			inQ.add(start);
+			yield {
+				q: [...q], vis: new Set(vis), inQ: new Set(inQ), ord: [], cur: -1,
+				desc: 'BFS: ' + C[start].code + ' added to queue (FIFO). Explores level by level.'
+			};
+			while (q.length) {
+				const n = q.shift(); inQ.delete(n);
+				if (vis.has(n)) continue;
+				vis.add(n); ord.push(n);
+				yield {
+					q: [...q], vis: new Set(vis), inQ: new Set(inQ), ord: [...ord], cur: n,
+					desc: 'Dequeue ' + C[n].code + ' (' + C[n].name + '). Adding unvisited neighbors to queue.'
+				};
+				for (const [nb] of ADJ[n]) {
+					if (!vis.has(nb) && !inQ.has(nb)) {
+						inQ.add(nb); q.push(nb);
+						yield {
+							q: [...q], vis: new Set(vis), inQ: new Set(inQ), ord: [...ord], cur: n,
+							desc: 'Enqueue ' + C[nb].code + ' — neighbor of ' + C[n].code + '.'
+						};
+					}
+				}
+			}
+			yield {
+				q: [], vis: new Set(vis), inQ: new Set(), ord: [...ord], cur: -1, done: true,
+				desc: 'BFS complete! All ' + ord.length + ' campuses visited in breadth-first order.'
+			};
+		}
+
+		function* algoDFS(start) {
+			const vis = new Set(), inS = new Set(), stk = [start], ord = [];
+			inS.add(start);
+			yield {
+				stk: [...stk], vis: new Set(vis), inS: new Set(inS), ord: [], cur: -1,
+				desc: 'DFS: ' + C[start].code + ' pushed to stack (LIFO). Dives as deep as possible.'
+			};
+			while (stk.length) {
+				const n = stk.pop(); inS.delete(n);
+				if (vis.has(n)) continue;
+				vis.add(n); ord.push(n);
+				yield {
+					stk: [...stk], vis: new Set(vis), inS: new Set(inS), ord: [...ord], cur: n,
+					desc: 'Pop & visit ' + C[n].code + ' (' + C[n].name + '). Pushing unvisited neighbors.'
+				};
+				for (const [nb] of [...ADJ[n]].reverse()) {
+					if (!vis.has(nb) && !inS.has(nb)) {
+						inS.add(nb); stk.push(nb);
+						yield {
+							stk: [...stk], vis: new Set(vis), inS: new Set(inS), ord: [...ord], cur: n,
+							desc: 'Push ' + C[nb].code + ' onto stack.'
+						};
+					}
+				}
+			}
+			yield {
+				stk: [], vis: new Set(vis), inS: new Set(), ord: [...ord], cur: -1, done: true,
+				desc: 'DFS complete! All ' + ord.length + ' campuses visited via deep traversal.'
+			};
+		}
+
+		function* algoUCS(start) {
+			const dist = new Array(C.length).fill(Infinity);
+			const prev = new Array(C.length).fill(-1);
+			const vis = new Set(), inPQ = new Set();
+			dist[start] = 0;
+			const pq = [[0, start]]; inPQ.add(start);
+			const ord = [];
+			yield {
+				pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), dist: [...dist], prev: [...prev], ord: [], cur: -1,
+				desc: 'UCS: ' + C[start].code + ' queued with cost 0. Expands cheapest cumulative path first.'
+			};
+			while (pq.length) {
+				pq.sort((a, b) => a[0] - b[0]);
+				const [d, node] = pq.shift(); inPQ.delete(node);
+				if (vis.has(node)) continue;
+				vis.add(node); ord.push(node);
+				yield {
+					pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), dist: [...dist], prev: [...prev], ord: [...ord], cur: node,
+					desc: 'UCS: settle ' + C[node].code + ' — cheapest confirmed path cost = ' + d.toFixed(1) + '.'
+				};
+				for (const [nb, w] of ADJ[node]) {
+					if (!vis.has(nb)) {
+						const nd = dist[node] + w;
+						if (nd < dist[nb]) {
+							dist[nb] = nd; prev[nb] = node;
+							inPQ.add(nb); pq.push([nd, nb]);
+							yield {
+								pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), dist: [...dist], prev: [...prev], ord: [...ord], cur: node,
+								desc: 'Update ' + C[nb].code + ': new cost ' + nd.toFixed(1) + ' via ' + C[node].code + '.'
+							};
+						}
+					}
+				}
+			}
+			yield {
+				pq: [], vis: new Set(vis), inPQ: new Set(), dist: [...dist], prev: [...prev], ord: [...ord], cur: -1, done: true,
+				desc: 'UCS complete! Optimal costs from ' + C[start].code + ' to all ' + ord.length + ' campuses.'
+			};
+		}
+
+		function* algoGBFS(start, goal) {
+			const vis = new Set(), inPQ = new Set();
+			const prev = new Array(C.length).fill(-1);
+			const pq = [[h(start, goal), start]]; inPQ.add(start);
+			const ord = [];
+			yield {
+				pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), prev: [...prev], ord: [], cur: -1, goal,
+				desc: 'Greedy BFS: start=' + C[start].code + ', goal=' + C[goal].code + '. Follows h(n) — straight-line estimate only.'
+			};
+			while (pq.length) {
+				pq.sort((a, b) => a[0] - b[0]);
+				const [hv, node] = pq.shift(); inPQ.delete(node);
+				if (vis.has(node)) continue;
+				vis.add(node); ord.push(node);
+				const isGoal = node === goal;
+				yield {
+					pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), prev: [...prev], ord: [...ord], cur: node, goal,
+					desc: isGoal
+						? 'Goal reached! ' + C[node].code + ' (' + C[node].name + '). Note: Greedy is NOT guaranteed optimal.'
+						: 'Expand ' + C[node].code + ' h=' + hv.toFixed(2) + '. Greedy always picks smallest h(n) next.'
+				};
+				if (isGoal) {
+					const path = []; let n = node; while (n >= 0) { path.unshift(n); n = prev[n]; }
+					yield {
+						pq: [], vis: new Set(vis), inPQ: new Set(), prev: [...prev], ord: [...ord], cur: -1, goal, done: true, path,
+						desc: 'Greedy BFS done. Path: ' + path.map(n => C[n].code).join(' > ')
+					};
+					return;
+				}
+				for (const [nb, w] of ADJ[node]) {
+					if (!vis.has(nb) && !inPQ.has(nb)) {
+						prev[nb] = node; inPQ.add(nb);
+						pq.push([h(nb, goal), nb]);
+						yield {
+							pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), prev: [...prev], ord: [...ord], cur: node, goal,
+							desc: 'Enqueue ' + C[nb].code + ' h=' + h(nb, goal).toFixed(2) + ' toward ' + C[goal].code + '.'
+						};
+					}
+				}
+			}
+			yield {
+				pq: [], vis: new Set(vis), inPQ: new Set(), prev: [...prev], ord: [...ord], cur: -1, goal, done: true,
+				desc: 'Greedy BFS done — no path found to ' + C[goal].code + '.'
+			};
+		}
+
+		function* algoAStar(start, goal) {
+			const INF = Infinity;
+			const g = new Array(C.length).fill(INF);
+			const f = new Array(C.length).fill(INF);
+			const prev = new Array(C.length).fill(-1);
+			const vis = new Set(), inPQ = new Set();
+			g[start] = 0; f[start] = h(start, goal);
+			const pq = [[f[start], start]]; inPQ.add(start);
+			const ord = [];
+			yield {
+				pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), g: [...g], f: [...f], prev: [...prev], ord: [], cur: -1, goal,
+				desc: 'A*: start=' + C[start].code + ', goal=' + C[goal].code + '. f(n)=g(n)+h(n). Optimal & informed.'
+			};
+			while (pq.length) {
+				pq.sort((a, b) => a[0] - b[0]);
+				const [fv, node] = pq.shift(); inPQ.delete(node);
+				if (vis.has(node)) continue;
+				vis.add(node); ord.push(node);
+				const isGoal = node === goal;
+				yield {
+					pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), g: [...g], f: [...f], prev: [...prev], ord: [...ord], cur: node, goal,
+					desc: isGoal
+						? 'Goal! ' + C[node].code + ' reached. g=' + g[node].toFixed(2) + ', h=0.00. A* guarantees optimal path!'
+						: 'Expand ' + C[node].code + ': g=' + g[node].toFixed(2) + ' h=' + h(node, goal).toFixed(2) + ' f=' + fv.toFixed(2) + '.'
+				};
+				if (isGoal) {
+					const path = []; let n = node; while (n >= 0) { path.unshift(n); n = prev[n]; }
+					yield {
+						pq: [], vis: new Set(vis), inPQ: new Set(), g: [...g], f: [...f], prev: [...prev], ord: [...ord], cur: -1, goal, done: true, path,
+						desc: 'A* done. Optimal cost=' + g[goal].toFixed(2) + '. Path: ' + path.map(n => C[n].code).join(' > ')
+					};
+					return;
+				}
+				for (const [nb, w] of ADJ[node]) {
+					if (!vis.has(nb)) {
+						const ng = g[node] + w;
+						if (ng < g[nb]) {
+							g[nb] = ng; f[nb] = ng + h(nb, goal); prev[nb] = node;
+							inPQ.add(nb); pq.push([f[nb], nb]);
+							yield {
+								pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), g: [...g], f: [...f], prev: [...prev], ord: [...ord], cur: node, goal,
+								desc: 'Update ' + C[nb].code + ': g=' + ng.toFixed(2) + ' h=' + h(nb, goal).toFixed(2) + ' f=' + f[nb].toFixed(2) + '.'
+							};
+						}
+					}
+				}
+			}
+			yield {
+				pq: [], vis: new Set(vis), inPQ: new Set(), g: [...g], f: [...f], prev: [...prev], ord: [...ord], cur: -1, goal, done: true,
+				desc: 'A* exhausted — no path from ' + C[start].code + ' to ' + C[goal].code + '.'
+			};
+		}
+
+		function* algoDijkstra(start) {
+			const dist = new Array(C.length).fill(Infinity);
+			const prev = new Array(C.length).fill(-1);
+			const vis = new Set(), inPQ = new Set();
+			dist[start] = 0;
+			const pq = [[0, start]]; inPQ.add(start);
+			const ord = [];
+			yield {
+				pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), dist: [...dist], prev: [...prev], ord: [], cur: -1,
+				desc: 'Dijkstra: start=' + C[start].code + '. Finds shortest paths to ALL other campuses.'
+			};
+			while (pq.length) {
+				pq.sort((a, b) => a[0] - b[0]);
+				const [d, node] = pq.shift(); inPQ.delete(node);
+				if (vis.has(node)) continue;
+				vis.add(node); ord.push(node);
+				yield {
+					pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), dist: [...dist], prev: [...prev], ord: [...ord], cur: node,
+					desc: 'Settle ' + C[node].code + ' — confirmed shortest distance = ' + d.toFixed(1) + '.'
+				};
+				for (const [nb, w] of ADJ[node]) {
+					if (!vis.has(nb)) {
+						const nd = dist[node] + w;
+						if (nd < dist[nb]) {
+							dist[nb] = nd; prev[nb] = node;
+							inPQ.add(nb); pq.push([nd, nb]);
+							yield {
+								pq: [...pq], vis: new Set(vis), inPQ: new Set(inPQ), dist: [...dist], prev: [...prev], ord: [...ord], cur: node,
+								desc: 'Relax ' + C[node].code + ' to ' + C[nb].code + ': dist ' + nd.toFixed(1) + '.'
+							};
+						}
+					}
+				}
+			}
+			yield {
+				pq: [], vis: new Set(vis), inPQ: new Set(), dist: [...dist], prev: [...prev], ord: [...ord], cur: -1, done: true,
+				desc: 'Dijkstra complete! Shortest paths from ' + C[start].code + ' to all ' + ord.length + ' campuses.'
+			};
+		}
+
+		// ── UI ────────────────────────────────────────────────
+		const META = {
+			bfs: { label: 'BFS', ds: 'QUEUE (FIFO)', showTable: false, hdr: '' },
+			dfs: { label: 'DFS', ds: 'STACK (LIFO)', showTable: false, hdr: '' },
+			ucs: { label: 'UCS', ds: 'PRIORITY QUEUE (cost)', showTable: true, hdr: 'Cost' },
+			gbfs: { label: 'Greedy BFS', ds: 'PRIORITY QUEUE (h)', showTable: true, hdr: 'h(n)' },
+			astar: { label: 'A*', ds: 'PRIORITY QUEUE (f=g+h)', showTable: true, hdr: 'f(n)' },
+			dijkstra: { label: 'Dijkstra', ds: 'PRIORITY QUEUE (min)', showTable: true, hdr: 'Dist' },
+		};
+
+		function updateUI(step) {
+			if (!step) return;
+			const algo = document.getElementById('algo').value;
+			const meta = META[algo];
+			const visited = step.vis || new Set();
+			const frontier = step.inQ || step.inS || step.inPQ || new Set();
+			const goal = step.goal;
+
+			document.getElementById('badge').className = 'badge' + (step.done ? ' done' : ' run');
+			document.getElementById('badge').textContent = step.done ? 'DONE' : 'RUNNING';
+			document.getElementById('stepBox').textContent = step.desc || '';
+			document.getElementById('stepNum').textContent = stepCount;
+			document.getElementById('algoLabel').textContent = meta.label;
+
+			resetViz();
+			for (const id of visited) setNode(id, 'nvis');
+			for (const id of frontier) if (!visited.has(id)) setNode(id, 'nq');
+			if (step.cur >= 0) setNode(step.cur, 'ncur');
+			if (goal != null && goal >= 0) setNode(goal, 'ngoal');
+
+			for (const [u, v] of EDGES) {
+				if (visited.has(u) && visited.has(v)) setEdge(u, v, 'evis');
+				else if ((step.cur === u || step.cur === v) && (frontier.has(u) || frontier.has(v) || visited.has(u) || visited.has(v))) setEdge(u, v, 'ecur');
+				else if (frontier.has(u) || frontier.has(v)) setEdge(u, v, 'eq');
+			}
+			if (step.path) {
+				for (let i = 0; i < step.path.length - 1; i++)setEdge(step.path[i], step.path[i + 1], 'egoal');
+			}
+
+			document.getElementById('dsTitle').textContent = meta.ds;
+
+			const dsI = document.getElementById('dsItems');
+			let items = [];
+			if (algo === 'bfs') {
+				items = (step.q || []).map((id, i) => '<span class="dsi ' + (i === 0 ? 'head' : 'q') + '">' + C[id].code + '</span>');
+			} else if (algo === 'dfs') {
+				items = [...(step.stk || [])].reverse().map((id, i) => '<span class="dsi ' + (i === 0 ? 'head' : 'q') + '">' + C[id].code + '</span>');
+			} else {
+				items = [...(step.pq || [])].sort((a, b) => a[0] - b[0]).slice(0, 12).map((pair, i) => '<span class="dsi ' + (i === 0 ? 'head' : 'q') + '">' + C[pair[1]].code + ':' + pair[0].toFixed(1) + '</span>');
+			}
+			dsI.innerHTML = items.length ? items.join('') : '<span class="empty-ds">&#8212; empty &#8212;</span>';
+
+			document.getElementById('travOrder').innerHTML =
+				(step.ord || []).map(id => '<div class="tnode" title="' + C[id].name + '">' + C[id].code.replace('C-', '') + '</div>').join('');
+
+			const dw = document.getElementById('dijkWrap');
+			if (meta.showTable && (step.dist || step.f || step.g)) {
+				dw.classList.remove('hidden');
+				document.getElementById('colHdr').textContent = meta.hdr;
+				const arr = step.dist || step.f || step.g;
+				const pv = step.prev || [];
+				document.getElementById('distBody').innerHTML = C.map(c => {
+					const d = arr[c.id] === Infinity ? 'inf' : arr[c.id].toFixed(1);
+					const via = pv[c.id] >= 0 ? C[pv[c.id]].code : '—';
+					const cls = visited.has(c.id) ? 'dvis' : frontier.has(c.id) ? 'dcur' : '';
+					return '<tr class="' + cls + '"><td>' + c.code + '</td><td>' + d + '</td><td>' + via + '</td></tr>';
+				}).join('');
+			} else { dw.classList.add('hidden'); }
+
+			const pw = document.getElementById('pathWrap');
+			if (step.path && step.path.length) {
+				pw.classList.remove('hidden');
+				const costArr = step.g || step.dist;
+				const cost = costArr && goal >= 0 && costArr[goal] !== Infinity ? 'Total cost: ' + costArr[goal].toFixed(2) : '';
+				document.getElementById('pathDisplay').innerHTML =
+					step.path.map(id => '<span style="color:var(--node-cur-t)">' + C[id].code + '</span>').join('<span style="color:#f97316;margin:0 3px;">></span>') +
+					(cost ? '<br><span style="color:var(--muted)">' + cost + '</span>' : '');
+			} else { pw.classList.add('hidden'); }
+		}
+
+		// ── ENGINE ────────────────────────────────────────────
+		let gen = null, playing = false, timer = null, stepCount = 0;
+
+		function delay() { return 2080 - parseInt(document.getElementById('spd').value); }
+		function advance() {
+			if (!gen) return;
+			const r = gen.next();
+			if (r.done || (r.value && r.value.done)) {
+				stopPlay();
+				document.getElementById('btnPlay').textContent = 'Done';
+				document.getElementById('btnPlay').disabled = true;
+				if (r.value) { stepCount++; updateUI(r.value); }
+				return;
+			}
+			stepCount++; updateUI(r.value);
+		}
+		function startPlay() {
+			playing = true;
+			document.getElementById('btnPlay').textContent = 'Pause';
+			timer = setInterval(advance, delay());
+		}
+		function stopPlay() {
+			playing = false; clearInterval(timer); timer = null;
+			const b = document.getElementById('btnPlay');
+			if (b.textContent === 'Pause') b.textContent = 'Play';
+		}
+
+		function build() {
+			const algo = document.getElementById('algo').value;
+			const start = parseInt(document.getElementById('startNode').value);
+			const goal = parseInt(document.getElementById('goalNode').value);
+			const needGoal = ['gbfs', 'astar'].includes(algo);
+			document.getElementById('goalWrap').classList.toggle('hidden', !needGoal);
+
+			stepCount = 0; resetViz();
+			document.getElementById('badge').className = 'badge';
+			document.getElementById('badge').textContent = 'IDLE';
+			document.getElementById('stepNum').textContent = '0';
+			document.getElementById('travOrder').innerHTML = '';
+			document.getElementById('dsItems').innerHTML = '<span class="empty-ds">&#8212; empty &#8212;</span>';
+			document.getElementById('stepBox').textContent = 'Press Play or Step to begin.';
+			document.getElementById('dijkWrap').classList.add('hidden');
+			document.getElementById('pathWrap').classList.add('hidden');
+			document.getElementById('btnPlay').textContent = 'Play';
+			document.getElementById('btnPlay').disabled = false;
+
+			if (algo === 'bfs') gen = algoBFS(start);
+			else if (algo === 'dfs') gen = algoDFS(start);
+			else if (algo === 'ucs') gen = algoUCS(start);
+			else if (algo === 'gbfs') gen = algoGBFS(start, goal);
+			else if (algo === 'astar') gen = algoAStar(start, goal);
+			else gen = algoDijkstra(start);
+
+			setNode(start, 'nq');
+			if (needGoal && goal !== start) setNode(goal, 'ngoal');
+		}
+
+		function nodeClick(id) {
+			document.getElementById('startNode').value = id;
+			stopPlay(); gen = null; build();
+		}
+
+		function populateSelects() {
+			const sn = document.getElementById('startNode');
+			const gn = document.getElementById('goalNode');
+			sn.innerHTML = ''; gn.innerHTML = '';
+			for (const c of C) {
+				sn.innerHTML += '<option value="' + c.id + '">' + c.code + ' — ' + c.name + '</option>';
+				gn.innerHTML += '<option value="' + c.id + '">' + c.code + ' — ' + c.name + '</option>';
+			}
+			gn.value = C.length - 1;
+		}
+
+		document.getElementById('btnPlay').addEventListener('click', () => {
+			if (!gen) build();
+			if (playing) stopPlay(); else startPlay();
+		});
+		document.getElementById('btnStep').addEventListener('click', () => {
+			if (!gen) build();
+			if (playing) stopPlay();
+			advance();
+		});
+		document.getElementById('btnReset').addEventListener('click', () => { stopPlay(); gen = null; build(); });
+		document.getElementById('algo').addEventListener('change', () => { stopPlay(); gen = null; build(); });
+		document.getElementById('startNode').addEventListener('change', () => { stopPlay(); gen = null; build(); });
+		document.getElementById('goalNode').addEventListener('change', () => { stopPlay(); gen = null; build(); });
+		document.getElementById('spd').addEventListener('input', function () {
+			document.getElementById('spdlbl').textContent = (2080 - parseInt(this.value)) + 'ms';
+			if (playing) { stopPlay(); startPlay(); }
+		});
+
+		populateSelects();
+		initMap();
+		build();
+	</script>
+</body>
+
+</html>
